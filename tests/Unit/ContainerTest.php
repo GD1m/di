@@ -2,6 +2,7 @@
 
 namespace GDim\DI\Tests\Unit;
 
+use Closure;
 use GDim\DI\Container;
 use GDim\DI\Exception\NotFoundException;
 use PHPUnit\Framework\TestCase;
@@ -37,7 +38,7 @@ class ContainerTest extends TestCase
         $this->assertNotTrue($container->has('invalid'));
     }
 
-    public function testClosureValue(): void
+    public function testClosureAsValue(): void
     {
         $container = new Container([
             'a' => static function (ContainerInterface $container) {
@@ -47,5 +48,18 @@ class ContainerTest extends TestCase
         ]);
 
         $this->assertEquals('class a', $container->get('a'));
+    }
+
+    public function testCallableValueNotInvokes(): void
+    {
+        $callable = 'get_class';
+
+        $this->assertIsCallable($callable);
+
+        $container = new Container([
+            'a' => $callable,
+        ]);
+
+        $this->assertEquals($callable, $container->get('a'));
     }
 }
