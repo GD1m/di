@@ -5,6 +5,7 @@ namespace GDim\DI\Tests\Unit;
 use GDim\DI\Container;
 use GDim\DI\Exception\NotFoundException;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 
 class ContainerTest extends TestCase
 {
@@ -34,5 +35,17 @@ class ContainerTest extends TestCase
 
         $this->assertTrue($container->has('valid'));
         $this->assertNotTrue($container->has('invalid'));
+    }
+
+    public function testClosureValue(): void
+    {
+        $container = new Container([
+            'a' => static function (ContainerInterface $container) {
+                return $container->get('dependency');
+            },
+            'dependency' => 'class a',
+        ]);
+
+        $this->assertEquals('class a', $container->get('a'));
     }
 }

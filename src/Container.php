@@ -23,7 +23,13 @@ class Container implements ContainerInterface
             throw new NotFoundException($id);
         }
 
-        return $this->values[$id];
+        $result = $this->values[$id];
+
+        if (is_callable($result)) {
+            return $result($this);
+        }
+
+        return $result;
     }
 
     public function has($id): bool
