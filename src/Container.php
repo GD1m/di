@@ -2,6 +2,7 @@
 
 namespace GDim\DI;
 
+use Closure;
 use GDim\DI\Exception\NotFoundException;
 use Psr\Container\ContainerInterface;
 
@@ -23,7 +24,13 @@ class Container implements ContainerInterface
             throw new NotFoundException($id);
         }
 
-        return $this->values[$id];
+        $result = $this->values[$id];
+
+        if ($result instanceof Closure) {
+            return $result($this);
+        }
+
+        return $result;
     }
 
     public function has($id): bool
