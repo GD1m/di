@@ -1,0 +1,32 @@
+{
+    "name": "gd1m/di",
+    "description": "PSR-11 Implementation",
+    "type": "library",
+    "require": {
+        "psr/container": "^1.0",
+        "php": ">=7.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^8.1",
+        "squizlabs/php_codesniffer": "^3.4",
+        "phpstan/phpstan": "^0.11.8"
+    },
+    "autoload": {
+        "psr-4": {
+            "GDim\\DI\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "GDim\\DI\\Tests\\": "tests/"
+        }
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Dmitry Golovachev",
+            "email": "gdim447@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable"
+}
