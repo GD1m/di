@@ -4,6 +4,7 @@ namespace GDim\DI;
 
 use Closure;
 use GDim\DI\Exception\NotFoundException;
+use GDim\DI\Loader\Alias;
 use Psr\Container\ContainerInterface;
 
 class Container implements ContainerInterface
@@ -27,6 +28,10 @@ class Container implements ContainerInterface
         $result = $this->values[$id];
 
         if ($result instanceof Closure) {
+            return $result($this);
+        }
+
+        if ($result instanceof LoaderInterface) {
             return $result($this);
         }
 
