@@ -2,9 +2,9 @@
 
 namespace GDim\DI\Tests\Unit;
 
-use Closure;
 use GDim\DI\Container;
 use GDim\DI\Exception\NotFoundException;
+use GDim\DI\Loader\Alias;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 
@@ -61,5 +61,16 @@ class ContainerTest extends TestCase
         ]);
 
         $this->assertEquals($callable, $container->get('a'));
+    }
+
+    public function testAlias(): void
+    {
+        $container = new Container([
+            'a' => 'class a',
+            'b' => 'class b',
+            'i' => new Alias('b'),
+        ]);
+
+        $this->assertEquals('class b', $container->get('i'));
     }
 }
