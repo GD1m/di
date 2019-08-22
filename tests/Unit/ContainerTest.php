@@ -5,49 +5,94 @@ namespace GDim\DI\Tests\Unit;
 use GDim\DI\Container;
 use GDim\DI\Exception\NotFoundException;
 use GDim\DI\Loader\Alias;
+use GDim\DI\ProviderInterface;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 
 class ContainerTest extends TestCase
 {
-    public function testGet(): void
-    {
-        $container = new Container([
-            'a' => 'class a',
-        ]);
+    /**
+     * @var MockObject
+     */
+    private $provider;
 
-        $this->assertEquals('class a', $container->get('a'));
+    /**
+     * @var Container
+     */
+    private $container;
+
+    protected function setUp(): void
+    {
+        $this->provider = $this->createMock(ProviderInterface::class);
+
+        assert($this->provider instanceof ProviderInterface);
+
+        $this->container = new Container($this->provider);
     }
 
     public function testGetNotExistsId(): void
     {
         $this->expectException(NotFoundException::class);
 
-        $container = new Container([]);
+        $this->container->get('invalid id');
+    }
 
-        $container->get('invalid');
+    public function testGet(): void
+    {
+        $this->provider
+            ->expects($this->once())
+            ->method('provide')
+            ->with('id')
+            ->willReturn('value');
+
+        $this->provider
+            ->expects($this->once())
+            ->method('canProvide')
+            ->with('id')
+            ->willReturn(true);
+
+        $this->assertSame('value', $this->container->get('id'));
     }
 
     public function testHas(): void
     {
-        $container = new Container([
-            'valid' => 'class a',
-        ]);
+        $this->provider
+            ->expects($this->never())
+            ->method('provide');
 
-        $this->assertTrue($container->has('valid'));
-        $this->assertNotTrue($container->has('invalid'));
+        $this->provider
+            ->expects($this->exactly(2))
+            ->method('canProvide')
+            ->willReturnCallback(static function (string $id) {
+                return $id === 'valid id';
+            });
+
+        $this->assertTrue($this->container->has('valid id'));
+        $this->assertFalse($this->container->has('invalid id'));
     }
 
     public function testClosureAsValue(): void
     {
-        $container = new Container([
-            'a' => static function (ContainerInterface $container) {
-                return $container->get('dependency');
-            },
-            'dependency' => 'class a',
-        ]);
+        $this->provider
+            ->expects($this->exactly(2))
+            ->method('canProvide')
+            ->willReturn(true);
 
-        $this->assertEquals('class a', $container->get('a'));
+        $this->provider
+            ->expects($this->exactly(2))
+            ->method('provide')
+            ->willReturnMap([
+                [
+                    'id',
+                    static function (ContainerInterface $container) {
+                        return $container->get('dependency');
+                    }
+                ],
+                ['dependency', 'value'],
+            ]);
+
+        $this->assertSame('value', $this->container->get('id'));
     }
 
     public function testCallableValueNotInvokes(): void
@@ -56,21 +101,35 @@ class ContainerTest extends TestCase
 
         $this->assertIsCallable($callable);
 
-        $container = new Container([
-            'a' => $callable,
-        ]);
+        $this->provider
+            ->expects($this->once())
+            ->method('canProvide')
+            ->willReturn(true);
 
-        $this->assertEquals($callable, $container->get('a'));
+        $this->provider
+            ->expects($this->once())
+            ->method('provide')
+            ->with('a')
+            ->willReturn($callable);
+
+        $this->assertSame($callable, $this->container->get('a'));
     }
 
     public function testAlias(): void
     {
-        $container = new Container([
-            'a' => 'class a',
-            'b' => 'class b',
-            'i' => new Alias('b'),
-        ]);
+        $this->provider
+            ->expects($this->exactly(3))
+            ->method('canProvide')
+            ->willReturn(true);
 
-        $this->assertEquals('class b', $container->get('i'));
+        $this->provider
+            ->expects($this->exactly(3))
+            ->method('provide')
+            ->willReturnMap([
+                ['a', 'class a'],
+                ['b', new Alias('a')],
+            ]);
+
+        $this->assertSame($this->container->get('a'), $this->container->get('b'));
     }
 }

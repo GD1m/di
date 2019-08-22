@@ -9,6 +9,6 @@ final class NotFoundException extends RuntimeException implements NotFoundExcept
 {
     public function __construct(string $id)
     {
-        parent::__construct("Container key {$id} not found");
+        parent::__construct("Container key `{$id}` not found");
     }
 }
