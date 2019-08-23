@@ -6,6 +6,7 @@ use GDim\DI\Container;
 use GDim\DI\Exception\NotFoundException;
 use GDim\DI\Exception\RecursiveDependencyException;
 use GDim\DI\Loader\Alias;
+use GDim\DI\Loader\Callback;
 use GDim\DI\ProviderInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -180,5 +181,35 @@ class ContainerTest extends TestCase
 
         $this->container->get('id');
         $this->container->get('id');
+    }
+
+    public function testCallbackLoader(): void
+    {
+        $this->provider
+            ->expects($this->exactly(3))
+            ->method('canProvide')
+            ->willReturn(true);
+
+        $this->provider
+            ->expects($this->exactly(3))
+            ->method('provide')
+            ->willReturnMap([
+                [
+                    'a',
+                    new Callback(static function (ContainerInterface $c) {
+                        return $c->get('b');
+                    })
+                ],
+                ['b', 'value b'],
+                [
+                    'c',
+                    new Callback(static function () {
+                        return 'value c';
+                    })
+                ]
+            ]);
+
+        $this->assertSame('value b', $this->container->get('a'));
+        $this->assertSame('value c', $this->container->get('c'));
     }
 }
