@@ -4,6 +4,7 @@ namespace GDim\DI\Tests\Unit;
 
 use GDim\DI\Container;
 use GDim\DI\Exception\NotFoundException;
+use GDim\DI\Exception\RecursiveDependencyException;
 use GDim\DI\Loader\Alias;
 use GDim\DI\ProviderInterface;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -118,12 +119,12 @@ class ContainerTest extends TestCase
     public function testAlias(): void
     {
         $this->provider
-            ->expects($this->exactly(3))
+            ->expects($this->exactly(2))
             ->method('canProvide')
             ->willReturn(true);
 
         $this->provider
-            ->expects($this->exactly(3))
+            ->expects($this->exactly(2))
             ->method('provide')
             ->willReturnMap([
                 ['a', 'class a'],
@@ -131,5 +132,53 @@ class ContainerTest extends TestCase
             ]);
 
         $this->assertSame($this->container->get('a'), $this->container->get('b'));
+    }
+
+    public function testRecursiveDependency(): void
+    {
+        $this->expectException(RecursiveDependencyException::class);
+
+        $this->provider
+            ->expects($this->exactly(2))
+            ->method('canProvide')
+            ->willReturn(true);
+
+        $this->provider
+            ->expects($this->exactly(2))
+            ->method('provide')
+            ->willReturnMap([
+                [
+                    'a',
+                    static function (ContainerInterface $container) {
+                        return $container->get('b');
+                    }
+                ],
+                [
+                    'b',
+                    static function (ContainerInterface $container) {
+                        return $container->get('a');
+                    }
+                ],
+            ]);
+
+        $this->container->get('a');
+    }
+
+    public function testGetIdMultiply(): void
+    {
+        $this->provider
+            ->expects($this->once())
+            ->method('provide')
+            ->with('id')
+            ->willReturn('value');
+
+        $this->provider
+            ->expects($this->once())
+            ->method('canProvide')
+            ->with('id')
+            ->willReturn(true);
+
+        $this->container->get('id');
+        $this->container->get('id');
     }
 }
