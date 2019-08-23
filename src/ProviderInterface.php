@@ -2,8 +2,6 @@
 
 namespace GDim\DI;
 
-use Psr\Container\ContainerInterface;
-
 interface ProviderInterface
 {
     public function provide(string $id);

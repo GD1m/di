@@ -2,7 +2,6 @@
 
 namespace GDim\DI\Provider;
 
-use GDim\DI\Exception\NotFoundException;
 use GDim\DI\Provider\Exception\KeyNotFoundException;
 use GDim\DI\ProviderInterface;
 

@@ -4,6 +4,7 @@ namespace GDim\DI;
 
 use Closure;
 use GDim\DI\Exception\NotFoundException;
+use GDim\DI\Exception\RecursiveDependencyException;
 use Psr\Container\ContainerInterface;
 
 class Container implements ContainerInterface
@@ -12,6 +13,16 @@ class Container implements ContainerInterface
      * @var ProviderInterface[]
      */
     private $providers;
+
+    /**
+     * @var array<string, mixed>
+     */
+    private $values = [];
+
+    /**
+     * @var string[]
+     */
+    private $providedKeys = [];
 
     /**
      * @param ProviderInterface ...$providers
@@ -27,7 +38,13 @@ class Container implements ContainerInterface
      */
     public function get($id)
     {
-        return $this->getValue($id);
+        if (array_key_exists($id, $this->values)) {
+            return $this->values[$id];
+        }
+
+        $this->values[$id] = $this->getValue($id);
+
+        return $this->get($id);
     }
 
     /**
@@ -41,11 +58,22 @@ class Container implements ContainerInterface
 
     private function getValue(string $id)
     {
-        $provider = $this->getProvider($id);
+        $this->checkKeyNotProvidedYet($id);
 
-        return $this->transformResult(
-            $provider->provide($id)
-        );
+        $result = $this
+            ->getProvider($id)
+            ->provide($id);
+
+        $this->providedKeys[] = $id;
+
+        return $this->transformResult($result);
+    }
+
+    private function checkKeyNotProvidedYet(string $id): void
+    {
+        if (in_array($id, $this->providedKeys, true)) {
+            throw new RecursiveDependencyException($id, $this->providedKeys);
+        }
     }
 
     private function getProvider(string $id): ProviderInterface
